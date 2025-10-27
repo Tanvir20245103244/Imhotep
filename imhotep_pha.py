@@ -7,15 +7,13 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
-
 # -------- DATABASE CONFIGURATION (for XAMPP MySQL) --------
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',        # default user in XAMPP
     'password': '',        # leave empty unless you set a MySQL password
-    'database': 'imhotep'  # must exist in phpMyAdmin
+    'database': 'Imhotep'  # must exist in phpMyAdmin
 }
-
 
 def get_connection():
     """Connect to MySQL database via XAMPP."""
@@ -40,15 +38,15 @@ class ImhotepPortal(QWidget):
         self.btn_back.setCursor(Qt.PointingHandCursor)
         self.btn_back.setStyleSheet("""
            QPushButton {
-        background-color: #ff6666;   
-        color: white;
-        border: 1px solid #e74c3c;
-        border-radius: 8px;
-        font-weight: 600;
-    }
-    QPushButton:hover { background-color: #ff4d4d; }
-    QPushButton:pressed { background-color: #e63939; }
-""")
+               background-color: #ff6666;   
+               color: white;
+               border: 1px solid #e74c3c;
+               border-radius: 8px;
+               font-weight: 600;
+           }
+           QPushButton:hover { background-color: #ff4d4d; }
+           QPushButton:pressed { background-color: #e63939; }
+        """)
         self.btn_back.clicked.connect(self.on_back)
         top_row.addWidget(self.btn_back, alignment=Qt.AlignLeft)
         top_row.addStretch(1)
@@ -172,21 +170,28 @@ class ImhotepPortal(QWidget):
     def query_customer(self, uid):
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT name FROM customers WHERE uid=%s", (uid,))
-        row = cur.fetchone()
-        conn.close()
-        return row[0] if row else None
+        try:
+            cur.execute("SELECT User_Name FROM Patient_Portal WHERE Patient_ID=%s", (uid,))
+            row = cur.fetchone()
+            return row[0] if row else None
+        finally:
+            conn.close()
 
     def query_prescriptions(self, uid):
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT id, medication, quantity, doctor_name, doctor_id, dispensed
-            FROM prescriptions WHERE customer_uid=%s AND dispensed=0
-        """, (uid,))
-        rows = cur.fetchall()
-        conn.close()
-        return rows
+        try:
+            cur.execute("""
+                SELECT Prescription.Pr_ID, Prescription.Prescription, 1 AS quantity,
+                       Doctor_Portal.Doctor_Name, Doctor_Portal.Doctor_ID, Prescription.Dispense
+                FROM Prescription
+                LEFT JOIN Doctor_Portal ON Prescription.Patient_ID = Doctor_Portal.Patient_ID
+                WHERE Prescription.Patient_ID=%s AND Prescription.Dispense=1
+            """, (uid,))
+            rows = cur.fetchall()
+            return rows
+        finally:
+            conn.close()
 
     # ---- UI EVENT HANDLERS ----
     def on_load(self):
@@ -283,22 +288,31 @@ class ImhotepPortal(QWidget):
     def on_dispense(self, pid):
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE prescriptions SET dispensed=1 WHERE id=%s", (pid,))
-        conn.commit()
-        conn.close()
-        QMessageBox.information(self, "Success", "Prescription marked as dispensed.")
+        try:
+            cur.execute("UPDATE Prescription SET Dispense=0 WHERE Pr_ID=%s", (pid,))
+            conn.commit()
+            QMessageBox.information(self, "Success", "Prescription marked as dispensed.")
+        finally:
+            conn.close()
         self.on_load()
 
     def on_details(self, pid):
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT medication, quantity, doctor_name, doctor_id FROM prescriptions WHERE id=%s", (pid,))
-        data = cur.fetchone()
-        conn.close()
-        if data:
-            med, qty, doc, docid = data
-            QMessageBox.information(self, "Prescription Details",
-                                    f"Medication: {med}\nQuantity: {qty}\nPrescribed by: {doc} ({docid})")
+        try:
+            cur.execute("""
+                SELECT Prescription.Prescription, 1 AS quantity, Doctor_Portal.Doctor_Name, Doctor_Portal.Doctor_ID
+                FROM Prescription
+                LEFT JOIN Doctor_Portal ON Prescription.Patient_ID = Doctor_Portal.Patient_ID
+                WHERE Pr_ID=%s
+            """, (pid,))
+            data = cur.fetchone()
+            if data:
+                med, qty, doc, docid = data
+                QMessageBox.information(self, "Prescription Details",
+                                        f"Medication: {med}\nQuantity: {qty}\nPrescribed by: {doc} ({docid})")
+        finally:
+            conn.close()
 
     def on_logout(self):
         self.close()
