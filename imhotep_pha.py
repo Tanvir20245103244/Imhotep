@@ -24,12 +24,14 @@ class ImhotepPortal(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Imhotep — Pharmacist's Portal")
-        self.setMinimumSize(900, 700)
+        self.setGeometry(100, 50, 1000, 750)  # ✅ Initial geometry (x, y, width, height)
         self.setup_ui()
 
     def setup_ui(self):
         outer = QVBoxLayout(self)
         outer.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        outer.setContentsMargins(20, 20, 20, 20)  # ✅ add margin for better alignment
+        outer.setSpacing(12)
 
         # ---- BACK BUTTON ROW ----
         top_row = QHBoxLayout()
@@ -67,7 +69,8 @@ class ImhotepPortal(QWidget):
         # ---- CARD ----
         card = QFrame()
         card.setObjectName("card")
-        card.setMaximumWidth(860)
+        card.setMinimumWidth(860)  # ✅ allow expansion, not restrict
+        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # ✅ responsive
         card.setStyleSheet("""
             QFrame#card{
                 background: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
@@ -83,6 +86,7 @@ class ImhotepPortal(QWidget):
         # ---- LEFT COLUMN ----
         left_col = QVBoxLayout()
         left_col.setSpacing(18)
+        left_col.setSizeConstraint(QVBoxLayout.SetMinimumSize)
 
         # Find Customer group
         find_group = QGroupBox()
@@ -156,6 +160,7 @@ class ImhotepPortal(QWidget):
         # ---- RIGHT COLUMN ----
         self.right_col = QVBoxLayout()
         self.right_col.setSpacing(12)
+        self.right_col.setSizeConstraint(QVBoxLayout.SetMinimumSize)
         pr_label = QLabel("Pending Prescriptions")
         pr_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.right_col.addWidget(pr_label)
@@ -163,8 +168,9 @@ class ImhotepPortal(QWidget):
 
         card_layout.addLayout(left_col, 2)
         card_layout.addLayout(self.right_col, 1)
-        outer.addWidget(card)
-        outer.addSpacerItem(QSpacerItem(0, 16))
+
+        outer.addWidget(card, alignment=Qt.AlignHCenter)
+        outer.addSpacerItem(QSpacerItem(0, 16, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
     # ---- DB FUNCTIONS ----
     def query_customer(self, uid):
