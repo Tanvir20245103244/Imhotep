@@ -2,7 +2,8 @@ import sys
 import mysql.connector
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton,
-    QVBoxLayout, QHBoxLayout, QFrame, QGroupBox, QSizePolicy, QSpacerItem, QMessageBox
+    QVBoxLayout, QHBoxLayout, QFrame, QGroupBox, QSizePolicy,
+    QSpacerItem, QMessageBox, QScrollArea
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
@@ -38,9 +39,15 @@ class ImhotepPortal(QWidget):
         self.btn_back.setFixedSize(90, 36)
         self.btn_back.setCursor(Qt.PointingHandCursor)
         self.btn_back.setStyleSheet("""
-            QPushButton { background-color: #ff6666; color: white; border: 1px solid #e74c3c; border-radius: 8px; font-weight: 600; }
-            QPushButton:hover { background-color: #ff4d4d; }
-            QPushButton:pressed { background-color: #e63939; }
+            QPushButton {
+                background-color: #d9534f;
+                color: white;
+                border: 1px solid #e74c3c;
+                border-radius: 8px;
+                font-weight: 600;
+            }
+            QPushButton:hover { background-color: #c93f3b; }
+            QPushButton:pressed { background-color: #c93f3b; }
         """)
         self.btn_back.clicked.connect(self.on_back)
         top_row.addWidget(self.btn_back, alignment=Qt.AlignLeft)
@@ -48,34 +55,35 @@ class ImhotepPortal(QWidget):
         outer.addLayout(top_row)
 
         # ---- TITLE ----
-        title = QLabel("Imhotep")
-        title.setFont(QFont("Segoe UI", 36, QFont.Bold))
-        subtitle = QLabel("Pharmacist's Portal")
-        subtitle.setFont(QFont("Segoe UI", 12))
-        subtitle.setStyleSheet("color: #777;")
-        outer.addWidget(title, alignment=Qt.AlignHCenter)
-        outer.addWidget(subtitle, alignment=Qt.AlignHCenter)
-        outer.addSpacing(18)
+        self.title = QLabel("Imhotep")
+        self.title.setFont(QFont("Segoe UI", 38, QFont.Bold))
+        self.subtitle = QLabel("Pharmacist's Portal")
+        self.subtitle.setFont(QFont("Segoe UI", 13))
+        self.subtitle.setStyleSheet("color: #777;")
+        outer.addWidget(self.title, alignment=Qt.AlignHCenter)
+        outer.addWidget(self.subtitle, alignment=Qt.AlignHCenter)
+        outer.addSpacing(22)
 
         # ---- CARD FRAME ----
-        card = QFrame()
-        card.setObjectName("card")
-        card.setMinimumWidth(860)
-        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        card.setStyleSheet("""
-            QFrame#card{
-                background: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255,255,255,1), stop:1 rgba(250,250,250,1));
-                border-radius: 18px;
-                border: 1px solid rgba(0,0,0,0.06);
+        self.card = QFrame()
+        self.card.setObjectName("card")
+        self.card.setMinimumWidth(860)
+        self.card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.card.setStyleSheet("""
+            QFrame#card {
+                background: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(255,255,255,1), stop:1 rgba(250,250,250,1));
+                border-radius: 20px;
+                border: 1px solid rgba(0,0,0,0.08);
             }
         """)
-        card_layout = QHBoxLayout(card)
-        card_layout.setContentsMargins(36, 36, 36, 36)
-        card_layout.setSpacing(30)
+        self.card_layout = QHBoxLayout(self.card)
+        self.card_layout.setContentsMargins(48, 48, 48, 48)
+        self.card_layout.setSpacing(36)
 
         # ---- LEFT COLUMN ----
-        left_col = QVBoxLayout()
-        left_col.setSpacing(18)
+        self.left_col = QVBoxLayout()
+        self.left_col.setSpacing(22)
 
         # Find Patient Group
         find_group = QGroupBox()
@@ -83,19 +91,33 @@ class ImhotepPortal(QWidget):
         find_group.setStyleSheet("QGroupBox { border: none; }")
         fg_layout = QVBoxLayout()
         lbl_find = QLabel("Find Patient")
-        lbl_find.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        lbl_find.setFont(QFont("Segoe UI", 13, QFont.Bold))
         self.input_uid = QLineEdit()
         self.input_uid.setPlaceholderText("Enter Patient ID (or leave blank for all)")
         self.input_uid.setFixedHeight(36)
         self.input_uid.setStyleSheet("""
-            QLineEdit { padding: 6px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
-            QLineEdit:focus { border: 1px solid #7fb3ff; background: #fff; }
+            QLineEdit {
+                padding: 6px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                background: #fafafa;
+            }
+            QLineEdit:focus {
+                border: 1px solid #7fb3ff;
+                background: #fff;
+            }
         """)
         btn_load = QPushButton("Load Prescription(s)")
         btn_load.setFixedHeight(44)
         btn_load.setCursor(Qt.PointingHandCursor)
         btn_load.setStyleSheet("""
-            QPushButton { background-color: #2e86de; color: white; border-radius: 6px; font-weight: 600; padding: 6px 14px; }
+            QPushButton {
+                background-color: #2e86de;
+                color: white;
+                border-radius: 6px;
+                font-weight: 600;
+                padding: 6px 14px;
+            }
             QPushButton:hover { background-color: #2574c8; }
             QPushButton:pressed { background-color: #1f5fa8; }
         """)
@@ -107,7 +129,7 @@ class ImhotepPortal(QWidget):
 
         # Patient details
         details_group = QGroupBox("Patient Details")
-        details_group.setFont(QFont("Segoe UI", 11))
+        details_group.setFont(QFont("Segoe UI", 13))
         d_layout = QVBoxLayout()
         self.lbl_name = QLabel("Name: —")
         self.lbl_uid = QLabel("UID: —")
@@ -121,37 +143,70 @@ class ImhotepPortal(QWidget):
         btn_logout.setFixedHeight(40)
         btn_logout.setCursor(Qt.PointingHandCursor)
         btn_logout.setStyleSheet("""
-            QPushButton { background-color: #d9534f; color: white; border-radius: 6px; font-weight: 600; padding: 6px 10px; }
+            QPushButton {
+                background-color: #d9534f;
+                color: white;
+                border-radius: 6px;
+                font-weight: 600;
+                padding: 8px 12px;
+            }
             QPushButton:hover { background-color: #c93f3b; }
         """)
         btn_logout.clicked.connect(self.on_logout)
+        self.left_col.addWidget(find_group)
+        self.left_col.addWidget(details_group)
+        self.left_col.addStretch(1)
+        self.left_col.addWidget(btn_logout, alignment=Qt.AlignLeft)
 
-        left_col.addWidget(find_group)
-        left_col.addWidget(details_group)
-        left_col.addStretch(1)
-        left_col.addWidget(btn_logout, alignment=Qt.AlignLeft)
+        # ---- RIGHT COLUMN WITH SCROLL AREA ----
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll_area.setStyleSheet("QScrollArea { border: none; }")
 
-        # ---- RIGHT COLUMN ----
-        self.right_col = QVBoxLayout()
+        scroll_content = QWidget()
+        self.right_col = QVBoxLayout(scroll_content)
         self.right_col.setSpacing(12)
+
         pr_label = QLabel("Pending Prescriptions")
         pr_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.right_col.addWidget(pr_label)
         self.right_col.addStretch(1)
 
-        card_layout.addLayout(left_col, 2)
-        card_layout.addLayout(self.right_col, 1)
-        outer.addWidget(card, alignment=Qt.AlignHCenter)
+        scroll_content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        scroll_area.setWidget(scroll_content)
+
+        # Add both columns
+        self.card_layout.addLayout(self.left_col, 2)
+        self.card_layout.addWidget(scroll_area, 3)
+
+        outer.addWidget(self.card, alignment=Qt.AlignHCenter)
         outer.addSpacerItem(QSpacerItem(0, 16, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+    # ---------------- RESIZE EVENT ----------------
+    def resizeEvent(self, event):
+        width = self.width()
+        scale = width / 1000  # base scaling reference from 1000px width
+
+        # Title & subtitle resize
+        self.title.setFont(QFont("Segoe UI", int(36 * scale), QFont.Bold))
+        self.subtitle.setFont(QFont("Segoe UI", int(12 * scale)))
+
+        # Adjust spacing and margins dynamically
+        self.card_layout.setContentsMargins(int(36 * scale), int(36 * scale),
+                                            int(36 * scale), int(36 * scale))
+        self.left_col.setSpacing(int(22 * scale))
+        self.right_col.setSpacing(int(16 * scale))
+        return super().resizeEvent(event)
 
     # ---------------- DATABASE FUNCTIONS ----------------
     def query_prescriptions_all(self):
-        """Fetch distinct prescriptions joined with patient_portal"""
         conn = get_connection()
         cur = conn.cursor()
         try:
             cur.execute("""
-                SELECT DISTINCT p.Doctor_Sugg, p.Prescription, p.Visit_Date, p.Dispense, pt.User_Name, pt.Patient_ID
+                SELECT DISTINCT p.Doctor_Sugg, p.Prescription, p.Visit_Date, p.Dispense,
+                                pt.User_Name, pt.Patient_ID
                 FROM prescription p
                 JOIN patient_portal pt ON p.Patient_ID = pt.Patient_ID
             """)
@@ -159,12 +214,41 @@ class ImhotepPortal(QWidget):
         finally:
             conn.close()
 
+    def query_prescriptions_by_id(self, patient_id):
+        conn = get_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("""
+                SELECT DISTINCT p.Doctor_Sugg, p.Prescription, p.Visit_Date, p.Dispense,
+                                pt.User_Name, pt.Patient_ID
+                FROM prescription p
+                JOIN patient_portal pt ON p.Patient_ID = pt.Patient_ID
+                WHERE p.Patient_ID = %s
+            """, (patient_id,))
+            return cur.fetchall()
+        finally:
+            conn.close()
+
     # ---------------- UI HANDLERS ----------------
     def on_load(self):
-        prescriptions = self.query_prescriptions_all()
-        self.lbl_name.setText("Name: All Patients")
-        self.lbl_uid.setText("UID: —")
-        self.load_prescriptions(prescriptions)
+        uid = self.input_uid.text().strip()
+        if uid:
+            prescriptions = self.query_prescriptions_by_id(uid)
+            if prescriptions:
+                name = prescriptions[0][4]
+                self.lbl_name.setText(f"Name: {name}")
+                self.lbl_uid.setText(f"UID: {uid}")
+                self.load_prescriptions(prescriptions)
+            else:
+                self.lbl_name.setText("Name: —")
+                self.lbl_uid.setText("UID: —")
+                QMessageBox.information(self, "No Results",
+                                        f"No prescriptions found for Patient ID {uid}.")
+        else:
+            prescriptions = self.query_prescriptions_all()
+            self.lbl_name.setText("Name: All Patients")
+            self.lbl_uid.setText("UID: —")
+            self.load_prescriptions(prescriptions)
 
     def load_prescriptions(self, prescriptions):
         self.clear_prescriptions_area()
@@ -186,8 +270,13 @@ class ImhotepPortal(QWidget):
 
     def create_prescription_card(self, info_text, med_text, patient_id):
         card = QFrame()
+        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         card.setStyleSheet("""
-            QFrame { border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; background-color: #f7f9f8; }
+            QFrame {
+                border: 1px solid rgba(0,0,0,0.08);
+                border-radius: 10px;
+                background-color: #FFFFFF;
+            }
         """)
         layout = QVBoxLayout(card)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -201,7 +290,13 @@ class ImhotepPortal(QWidget):
         btn_dispense = QPushButton("Dispense")
         btn_dispense.setCursor(Qt.PointingHandCursor)
         btn_dispense.setStyleSheet("""
-            QPushButton { background-color: #28a745; color: white; border-radius: 6px; font-weight: 600; padding: 4px 10px; }
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                border-radius: 8px;
+                font-weight: 600;
+                padding: 4px 10px;
+            }
             QPushButton:hover { background-color: #218838; }
             QPushButton:pressed { background-color: #1e7e34; }
         """)
@@ -225,11 +320,11 @@ class ImhotepPortal(QWidget):
         try:
             conn = get_connection()
             cur = conn.cursor()
-            # Assuming Dispense = 1 means pending, set to 0 to mark as dispensed
             cur.execute("UPDATE prescription SET Dispense=0 WHERE Patient_ID=%s", (patient_id,))
             conn.commit()
-            QMessageBox.information(self, "Dispensed", f"Prescription for Patient ID {patient_id} has been dispensed.")
-            card_widget.deleteLater()  # Remove the card from UI
+            QMessageBox.information(self, "Dispensed",
+                                    f"Prescription for Patient ID {patient_id} has been dispensed.")
+            card_widget.deleteLater()
         except mysql.connector.Error as e:
             QMessageBox.critical(self, "Error", f"Database error: {e}")
         finally:
